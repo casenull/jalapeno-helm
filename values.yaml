@@ -5,9 +5,6 @@ collectors:
   gobmp:
     replicas: 1
     image: docker.io/sbezverk/gobmp:latest
-    ports:
-      incomingBMPSessions: 30511
-      performanceMonitoring: 30767
     resources:
       requests:
         memory: 50Mi
@@ -15,15 +12,18 @@ collectors:
       limits:
         memory: 1024Mi
         cpu: 1
-    service:
+    externalAccess:
+      type: LoadBalancer
       loadBalancerIP: 10.5.0.129
+      # type: NodePort
+      # nodePortIncomingBMPSessions: 30511
+      # nodePortPerformanceMonitoring: 30767
 
   telegrafIngress:
     name: telegraf-ingress
     replicas: 1
     image: telegraf:1.36-alpine
     imagePullSecret: regcred
-    port: 32400
     # resources:
     #   requests:
     #     memory:
@@ -31,8 +31,11 @@ collectors:
     #   limits:
     #     memory:
     #     cpu:
-    service:
+    externalAccess:
+      type: LoadBalancer
       loadBalancerIP: 10.5.0.130
+      # type: NodePort
+      # nodePort: 32400
 
 processors:
   lslinknodeEdge:
@@ -82,6 +85,7 @@ storage:
     externalAccess:
       type: LoadBalancer
       loadBalancerIP: 10.5.0.131
+      # type: NodePort
       # nodePort: 30852
     # auth:
         # rootPassword: jalapeno # default is "jalapeno"
@@ -108,7 +112,10 @@ messaging:
       enabled: true
       size: 1Gi
     externalAccess:
-      loadBalancerIP: 10.5.0.133 # for now only LoadBalancer is supported
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.133
+      # type: NodePort
+      # nodePort: 30994
 
   kafkaUi:
     enabled: true
@@ -116,6 +123,8 @@ messaging:
     externalAccess:
       type: LoadBalancer
       loadBalancerIP: 10.5.0.134
+      # type: NodePort
+      # nodePort: 30777
 
 grafana:
   replicas: 1
@@ -136,9 +145,8 @@ grafana:
   service:
     type: LoadBalancer
     loadBalancerIP: 10.5.0.135
-  deploymentStrategy:
-    type: Recreate 
-  
+    # type: NodePort
+    # nodePort: 30333
   datasources:
     datasources.yaml:
       apiVersion: 1

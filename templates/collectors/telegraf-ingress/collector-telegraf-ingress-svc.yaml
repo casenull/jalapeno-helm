@@ -1,15 +1,21 @@
+{{- with .Values.collectors.telegrafIngress }}
 apiVersion: v1
 kind: Service
 metadata:
   name: telegraf-ingress
-  annotations:
 spec:
-  type: LoadBalancer
-  loadBalancerIP: {{ .Values.collectors.telegrafIngress.service.loadBalancerIP }}
+  type: {{ if .externalAccess }}{{ default "NodePort" .externalAccess.type }}{{ else }}ClusterIP{{ end }}
+  {{- if and .externalAccess (eq .externalAccess.type "LoadBalancer") .externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ .externalAccess.loadBalancerIP }}
+  {{- end }}
   ports:
-  - name: 57400-tcp
-    protocol: TCP
-    port: {{ .Values.collectors.telegrafIngress.port }}
-    targetPort: 57400 # configured telegraf service port 
+    - name: 57400-tcp
+      protocol: TCP
+      port: 57400
+      targetPort: 57400 # configured telegraf service port
+      {{- if and .externalAccess (eq .externalAccess.type "NodePort") .externalAccess.nodePort }}
+      nodePort: {{ .externalAccess.nodePort }}
+      {{- end }}
   selector:
     app: telegraf-ingress
+{{- end }}

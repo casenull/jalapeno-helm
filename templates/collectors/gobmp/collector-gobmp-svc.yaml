@@ -1,39 +1,28 @@
+{{- with .Values.collectors.gobmp }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.collectors.gobmp.name }}
-  {{- if .Values.collectors.gobmp.service.annotations }}
-  annotations:
-  {{- toYaml .Values.collectors.gobmp.service.annotations | nindent 4 }}
-  {{- end }}
+  name: gobmp
 spec:
-  {{- if (or (eq .Values.collectors.gobmp.service.type "ClusterIP") (empty .Values.collectors.gobmp.service.type)) }}
-  type: ClusterIP
-  {{- with .Values.collectors.gobmp.service.clusterIP }}
-  clusterIP: {{ . }}
-  {{- end }}
-  {{- else if eq .Values.collectors.gobmp.service.type "LoadBalancer" }}
-  type: LoadBalancer
-  {{- with .Values.collectors.gobmp.service.loadBalancerIP }}
-  loadBalancerIP: {{ . }}
-  {{- end }}
-  {{- else }}
-  type: {{ .Values.collectors.gobmp.service.type }}
+  type: {{ if .externalAccess }}{{ default "NodePort" .externalAccess.type }}{{ else }}ClusterIP{{ end }}
+  {{- if and .externalAccess (eq .externalAccess.type "LoadBalancer") .externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ .externalAccess.loadBalancerIP }}
   {{- end }}
   ports:
-  - name: incbmpsess
-    protocol: TCP
-    port: {{ .Values.collectors.gobmp.ports.incomingBMPSessions }}
-    targetPort: 5000
-    {{- if (and (eq .Values.collectors.gobmp.service.type "NodePort") (not (empty .Values.collectors.gobmp.ports.incomingBMPSessions ))) }}
-    nodePort: {{ .Values.collectors.gobmp.ports.incomingBMPSessions }}
-    {{- end }}
-  - name: perfmon
-    protocol: TCP
-    port: {{ .Values.collectors.gobmp.ports.performanceMonitoring }}
-    targetPort: 56767
-    {{- if (and (eq .Values.collectors.gobmp.service.type "NodePort") (not (empty .Values.collectors.gobmp.ports.performanceMonitoring ))) }}
-    nodePort: {{ .Values.collectors.gobmp.ports.performanceMonitoring }}
-    {{- end }}
+    - name: incbmpsess
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+      {{- if and .externalAccess (eq .externalAccess.type "NodePort") .externalAccess.nodePortIncomingBMPSessions }}
+      nodePort: {{ .externalAccess.nodePortIncomingBMPSessions }}
+      {{- end }}
+    - name: perfmon
+      port: 56767
+      targetPort: 56767
+      protocol: TCP
+      {{- if and .externalAccess (eq .externalAccess.type "NodePort") .externalAccess.nodePortPerformanceMonitoring }}
+      nodePort: {{ .externalAccess.nodePortPerformanceMonitoring }}
+      {{- end }}
   selector:
-    app: {{ .Values.collectors.gobmp.name }}
+    app: gobmp
+{{- end }}
