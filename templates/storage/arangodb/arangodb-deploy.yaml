@@ -22,12 +22,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: arangodb-config
+          {{- if .Values.storage.arangodb.persistence }}
           volumeMounts:
             - name: arangodb-data
               mountPath: /data
             - name: arangodb-apps
               mountPath: /apps
-              
+          {{- end }}
+      {{- if .Values.storage.arangodb.persistence }}
       volumes:
         - name: arangodb-data
           persistentVolumeClaim:
@@ -35,3 +37,4 @@ spec:
         - name: arangodb-apps
           persistentVolumeClaim:
             claimName: arangodb-apps-pvc
+      {{- end }}

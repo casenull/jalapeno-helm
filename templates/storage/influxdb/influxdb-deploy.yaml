@@ -22,10 +22,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: influxdb-config
+          {{- if .Values.storage.influxdb.persistence }}
           volumeMounts:
             - name: influxdb-data
               mountPath: /var/lib/influxdb
+          {{- end }}
+      {{- if .Values.storage.influxdb.persistence }}
       volumes:
         - name: influxdb-data
           persistentVolumeClaim:
             claimName: influxdb-pvc
+      {{- end }}
