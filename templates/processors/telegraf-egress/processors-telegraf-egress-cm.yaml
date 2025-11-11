@@ -24,7 +24,7 @@ data:
 
     [[outputs.influxdb]]
       urls = ["http://influxdb.{{ .Release.Namespace }}:8086"]
-      database = "{{ .Values.storage.influxdb.database | default "mtd_db" }}"
+      database = "{{ .Values.storage.influxdb.database | default "mdt_db" }}"
       username = "{{ .Values.storage.influxdb.user | default "jalapeno" }}"
       password = "{{ .Values.storage.influxdb.password | default "jalapeno" }}"
       precision = "s"
