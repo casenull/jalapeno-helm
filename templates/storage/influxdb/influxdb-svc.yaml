@@ -1,0 +1,23 @@
+{{- with .Values.storage.influxdb}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  labels:
+    app.kubernetes.io/name: influxdb
+spec:
+  type: {{ if .externalAccess }}{{ default "NodePort" .externalAccess.type }}{{ else }}ClusterIP{{ end }}
+  {{- if and .externalAccess (eq .externalAccess.type "LoadBalancer") .externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ .externalAccess.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - name: http-api
+      port: 8086
+      targetPort: 8086
+      protocol: TCP
+      {{- if and (hasKey . "externalAccess") (eq .externalAccess.type "NodePort") }}
+      nodePort: {{ .externalAccess.nodePort }}
+      {{- end }}
+  selector:
+    app.kubernetes.io/name: influxdb
+{{- end }}

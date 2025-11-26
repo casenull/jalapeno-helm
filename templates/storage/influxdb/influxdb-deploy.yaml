@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:  
+      app.kubernetes.io/name: influxdb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: influxdb
+    spec:
+      containers:
+        - name: influxdb
+          image: {{ .Values.storage.influxdb.image }}
+          ports:
+            - name: http-api
+              containerPort: 8086
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: influxdb-config
+          {{- if .Values.storage.influxdb.persistence }}
+          volumeMounts:
+            - name: influxdb-data
+              mountPath: /var/lib/influxdb
+          {{- end }}
+      {{- if .Values.storage.influxdb.persistence }}
+      volumes:
+        - name: influxdb-data
+          persistentVolumeClaim:
+            claimName: influxdb-pvc
+      {{- end }}

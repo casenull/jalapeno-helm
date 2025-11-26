@@ -1,0 +1,23 @@
+{{- with .Values.storage.arangodb }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: arangodb
+  labels:
+    app.kubernetes.io/name: arangodb
+spec:
+  type: {{ if .externalAccess }}{{ default "NodePort" .externalAccess.type }}{{ else }}ClusterIP{{ end }}
+  {{- if and .externalAccess (eq .externalAccess.type "LoadBalancer") .externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ .externalAccess.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - name: http-api
+      port: 8529
+      targetPort: 8529
+      protocol: TCP
+      {{- if and (hasKey . "externalAccess") (eq .externalAccess.type "NodePort") }}
+      nodePort: {{ .externalAccess.nodePort }}
+      {{- end }}
+  selector:
+    app.kubernetes.io/name: arangodb
+{{- end }}

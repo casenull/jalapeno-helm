@@ -1,0 +1,28 @@
+{{- with .Values.collectors.gobmp }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: gobmp
+spec:
+  type: {{ if .externalAccess }}{{ default "NodePort" .externalAccess.type }}{{ else }}ClusterIP{{ end }}
+  {{- if and .externalAccess (eq .externalAccess.type "LoadBalancer") .externalAccess.loadBalancerIP }}
+  loadBalancerIP: {{ .externalAccess.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - name: incbmpsess
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+      {{- if and .externalAccess (eq .externalAccess.type "NodePort") .externalAccess.nodePortIncomingBMPSessions }}
+      nodePort: {{ .externalAccess.nodePortIncomingBMPSessions }}
+      {{- end }}
+    - name: perfmon
+      port: 56767
+      targetPort: 56767
+      protocol: TCP
+      {{- if and .externalAccess (eq .externalAccess.type "NodePort") .externalAccess.nodePortPerformanceMonitoring }}
+      nodePort: {{ .externalAccess.nodePortPerformanceMonitoring }}
+      {{- end }}
+  selector:
+    app: gobmp
+{{- end }}

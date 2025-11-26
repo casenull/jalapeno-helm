@@ -1,0 +1,171 @@
+# Self maintained charts /template
+ingressSecretName: ingress-certificate-secret-prod
+
+collectors:
+  gobmp:
+    replicas: 1
+    image: docker.io/sbezverk/gobmp:latest
+    resources:
+      requests:
+        memory: 50Mi
+        cpu: 10m
+      limits:
+        memory: 1024Mi
+        cpu: 1
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.129
+      # type: NodePort
+      # nodePortIncomingBMPSessions: 30511
+      # nodePortPerformanceMonitoring: 30767
+
+  telegrafIngress:
+    name: telegraf-ingress
+    replicas: 1
+    image: telegraf:1.36-alpine
+    imagePullSecret: regcred
+    # resources:
+    #   requests:
+    #     memory:
+    #     cpu:
+    #   limits:
+    #     memory:
+    #     cpu:
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.130
+      # type: NodePort
+      # nodePort: 32400
+
+processors:
+  lslinknodeEdge:
+    name: linkstate-edge
+    replicas: 1
+    image: ghcr.io/jalapeno-api-gateway/jalapeno/linkstate-edge:v1.0.2
+    # image: docker.io/iejalapeno/linkstate-edge:latest
+    # resources:
+    #   requests:
+    #     memory:
+    #     cpu:
+    #   limits:
+    #     memory:
+    #     cpu:
+  telegrafEgress:
+    name: telegraf-egress
+    replicas: 1
+    image: telegraf:1.36-alpine
+    imagePullSecret: regcred
+    # resources:
+    #   requests:
+    #     memory:
+    #     cpu:
+    #   limits:
+    #     memory:
+    #     cpu:
+  topology:
+    name: topology
+    replicas: 1
+    image: ghcr.io/jalapeno-api-gateway/jalapeno/topology:v1.0.2
+    # image: docker.io/iejalapeno/topology:latest
+    # image: docker.io/iejalapeno/topology:test20250829
+    # resources:
+    #   requests:
+    #     memory:
+    #     cpu:
+    #   limits:
+    #     memory:
+    #     cpu:
+
+storage:
+  arangodb:
+    image: arangodb:3.12.5.2
+    persistence:
+      dataSize: 1Gi
+      appsSize: 1Gi
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.131
+      # type: NodePort
+      # nodePort: 30852
+    # auth:
+        # rootPassword: jalapeno # default is "jalapeno"
+
+  influxdb:
+    image: influxdb:1.12.2-alpine
+    persistence:
+      size: 1Gi
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.132
+      # type: NodePort
+      # nodePort: 30308
+    # database: mdt_db # default is "mdt_db"
+    # user: admin # default is "admin"
+    # password: jalapeno # default is "jalapeno" 
+
+messaging: 
+  kafka:
+    name: kafka
+    image: apache/kafka:3.9.1
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 1Gi
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.133
+      # type: NodePort
+      # nodePort: 30994
+
+  kafkaUi:
+    enabled: true
+    image: ghcr.io/kafbat/kafka-ui:latest
+    externalAccess:
+      type: LoadBalancer
+      loadBalancerIP: 10.5.0.134
+      # type: NodePort
+      # nodePort: 30777
+
+grafana:
+  replicas: 1
+  image:
+    tag: 12.1.1
+  # Grafana is too dumb for non-failing upgrades: https://github.com/grafana/helm-charts/issues/1184
+  deploymentStrategy:
+    type: Recreate
+  
+  persistence:
+    enabled: true
+    type: pvc
+    size: 1Gi
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Admin 
+  service:
+    type: LoadBalancer
+    loadBalancerIP: 10.5.0.135
+    # type: NodePort
+    # nodePort: 30333
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: InfluxDB_v1
+          type: influxdb
+          access: proxy
+          user: grafana
+          url: http://influxdb:8086
+          jsonData:
+            dbName: mdt_db 
+            httpMode: GET
+          secureJsonData:
+            password: grafana
+      deleteDatasources:
+        - name: InfluxDB_v1
+          orgId: 1
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana-dashboard
